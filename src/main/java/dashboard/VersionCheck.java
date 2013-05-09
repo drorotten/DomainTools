@@ -108,7 +108,7 @@ public class VersionCheck
            lines++;
      
            // Track the event in Mixpanel (using the POST import) - event time is in the PAST
-           mix.postVersionCheckToMixpanel(API_KEY, TOKEN, ip, registrant, "Version-Check", eventTime, build);
+           mix.postVersionCheckToMixpanel(API_KEY, TOKEN, ip, registrant, "Version Check", eventTime, build);
            
       } // while
     } catch (IOException e) {
