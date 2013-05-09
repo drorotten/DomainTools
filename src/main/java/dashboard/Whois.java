@@ -8,21 +8,21 @@
 
 package dashboard;
 
-
 import org.codehaus.jackson.JsonNode;
 import com.domaintoolsapi.exceptions.DomainToolsException;
 
   
 public class  Whois {
-    
-     public String whois( String ip, String apiuser, String apipass ) {
-   
-   		 
+     private DomainTools domainTools = null;
+     
+     public Whois( String apiuser, String apipass ) {
+       this.domainTools = new DomainTools(apiuser, apipass);
+     }
+         		 
+     public String whoisIP( String ip ) {
 		   JsonNode jsonNode;
        String registrant = "";  
-       
-       DomainTools domainTools = new DomainTools(apiuser, apipass);
-       
+             
        try {
       
       			DTRequest dtRequest = domainTools.use("whois");
@@ -33,9 +33,12 @@ public class  Whois {
     
       			//System.out.println(">>>>>> " + ip + " - " + registrant );
 		
-       } catch (DomainToolsException e) {
+       //} catch (DomainToolsException e) {
+       } catch (Exception e) {
 			      e.printStackTrace();
+            System.out.println("\n\n =====  " + ip + " == " + registrant + " ====\n\n");
 		   }
+     
      return registrant;     
     }
 }

@@ -107,15 +107,14 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
         <configuration>
           <archive>
             <manifest>
-              <mainClass>dashboard.ImportCDN</mainClass>
+              <mainClass>dashboard.ImportMain</mainClass>
             </manifest>
           </archive>
           <descriptorRefs>
             <descriptorRef>jar-with-dependencies</descriptorRef>
           </descriptorRefs>
-          <finalName>importLogs</finalName>
+          <finalName>import</finalName>
           <appendAssemblyId>false</appendAssemblyId>
-
         </configuration>
         <executions>
           <execution>

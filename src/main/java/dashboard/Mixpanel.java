@@ -30,24 +30,28 @@ import org.apache.commons.httpclient.methods.*;
 
 public class Mixpanel
 {
+int i = 0;
 
    // =============================
    // Post CDN event to Mixpanel
    //
    // =============================
    public int postCDNEventToMixpanel(String API_KEY, String TOKEN, 
-                                     String ip, String eventName, String eventTime, String method,
-                                      String fileName, String fName, String userAgent, 
-                                      String statusCode, String registrant) throws IOException 
+                                     String ip, String eventName, 
+                                     String eventTime, String method,
+                                     String fileName, String fName, 
+                                     String userAgent, 
+                                     String statusCode, 
+                                     String registrant) throws IOException 
    {
   
    try {
       SimpleDateFormat sdf  = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
       Date date = sdf.parse( eventTime );
       long timeInSecSinceEpoch = date.getTime();
-      if (timeInSecSinceEpoch > 0) timeInSecSinceEpoch = timeInSecSinceEpoch / 1000;   
+      if (timeInSecSinceEpoch > 0) 
+          timeInSecSinceEpoch = timeInSecSinceEpoch / 1000;   
 
-      
       JSONObject obj1 = new JSONObject();
       obj1.put("distinct_id", ip);
       obj1.put("ip", ip);
@@ -67,24 +71,72 @@ public class Mixpanel
       String s2 = obj2.toString();
       String encodedJSON = Base64.encodeBase64String(StringUtils.getBytesUtf8(s2));
       
-      return postRequest("http://api.mixpanel.com/import", "data", encodedJSON, "api_key", API_KEY );
+      return postRequest( encodedJSON, API_KEY );
      } catch (Exception e) {
          //throw new RuntimeException("Can't POST to Mixpanel.", e);
          e.printStackTrace();
          return 0;
      }
+
    }
   
-   public int postRequest(String url, String p1, String v1, String p2, String v2)
+   // ========================================
+   // Post "Version Check" event to mixpanel
+   //
+   // ========================================
+   public int postVersionCheckToMixpanel(String API_KEY, String TOKEN,
+                                         String ip, String registrant, 
+                                         String eventName, 
+                                         String eventTime, 
+                                         String buildNum ) throws IOException 
+   { 
+   String pattern = "M/dd/yy h:mm a";
+   SimpleDateFormat sdf  = new SimpleDateFormat(pattern);
+   try {
+      Date date = sdf.parse( eventTime );
+      long timeInSecSinceEpoch = date.getTime();
+      if (timeInSecSinceEpoch > 0) 
+          timeInSecSinceEpoch = timeInSecSinceEpoch / 1000;   
+      
+      JSONObject obj1 = new JSONObject();
+      obj1.put("distinct_id", ip);
+      obj1.put("ip", ip);
+      obj1.put("registrant", registrant);
+      obj1.put("build", buildNum);
+      obj1.put("time", timeInSecSinceEpoch ); 
+      obj1.put("token", TOKEN);
+   
+      JSONObject obj2 = new JSONObject();
+      System.out.println(">> " + i + " - " + eventName + " " + eventTime + "  " + ip + " - " + registrant);
+      i++;
+      obj2.put("event", eventName);
+      obj2.put("properties", obj1);
+
+      String s2 = obj2.toString();
+      String encodedJSON = Base64.encodeBase64String(StringUtils.getBytesUtf8(s2));
+      
+      return postRequest(  encodedJSON, API_KEY );
+    } catch (Exception e) {
+	     System.out.println("\n>>> Can't POST Version Check event to Mixpanel.");
+       //throw new RuntimeException("Can't POST to Mixpanel.", e);
+       return 0;
+    }
+   }
+
+   // ========================================
+   // Post event to mixpanel
+   //
+   // ========================================
+   public int postRequest( String encodedDataJSON, String api_key)
    {
     try {
      String contents = ""; 
      HttpClient client = new HttpClient();
-     PostMethod method = new PostMethod( url );
+     PostMethod method = new PostMethod( "http://api.mixpanel.com/import" );
 
 	   // Configure the form parameters
-	   method.addParameter( p1, v1 );
-	   method.addParameter( p2, v2 );
+	   method.addParameter( "data", encodedDataJSON );
+	   method.addParameter( "api_key", api_key );
     
      // Add more details in the POST response 
 	   method.addParameter( "verbose", "1" );
@@ -94,6 +146,7 @@ public class Mixpanel
      int statusCode = client.executeMethod( method );
      contents = method.getResponseBodyAsString();
      method.releaseConnection();
+     
      if (statusCode != 200 || contents.charAt(11) != '1') {  // Post to Mixpanel Failed
         System.out.println("Mixpanel Post respone: " + Integer.toString(statusCode) + " - " + contents);
         return 0;

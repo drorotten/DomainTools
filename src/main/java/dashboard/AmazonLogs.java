@@ -8,9 +8,12 @@
 
 package dashboard;
 
+import java.util.ArrayList;
+
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.io.*;
 
 import java.util.zip.GZIPInputStream;
 
@@ -20,7 +23,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 
-
 public class AmazonLogs
 {
 
@@ -29,7 +31,8 @@ public class AmazonLogs
    // 
    // ======================================
    public int readAmazonLogs(int n, 
-                             String AWS_USER, String AWS_PASS, String bucketName, String DELETE_PROCESSED_LOGS,
+                             String AWS_USER, String AWS_PASS, String IPfile,
+                             String bucketName, String DELETE_PROCESSED_LOGS,
                              String API_KEY, String TOKEN,
                              String apiuser, String apipass) throws Exception {
                              
@@ -44,24 +47,30 @@ public class AmazonLogs
         String ip = "";
         String prevIP = "";    
         Mixpanel mix = new Mixpanel();
-        Whois w = new Whois();
+        Whois w = new Whois(apiuser, apipass);
+        int index = -1;
+        Registrant r;
+        ArrayList<Registrant> rList = new ArrayList<Registrant>();
+        IPList ipl = new IPList();
         
         // Log files Bucket
         AWSCredentials credentials = new BasicAWSCredentials(AWS_USER,AWS_PASS);
         AmazonS3Client s3Client = new AmazonS3Client(credentials);
         ListObjectsRequest listObjectsRequest = new ListObjectsRequest().withBucketName(bucketName);
-        
-        // Set MARKER - from which Log File to start reading
-        // listObjectsRequest.setMarker("E2DXXJR0N8BXOK.2013-03-18-10.ICK6IvaY.gz");
-        
+              
         BufferedReader br = null;
         
         ObjectListing objectListing = s3Client.listObjects(listObjectsRequest);
         ObjectListing nextObjectListing = objectListing;
         zips = 0;
         Boolean more = true;
-        if (objectListing == null) more = false;
-                
+        if (objectListing == null) 
+            more = false;
+        else {
+            ipl.loadList(  rList, IPfile );
+            ipl.printList(rList, 30);
+        }
+                    
         while (more) {
         // Reads 1000 files
         for (S3ObjectSummary objectSummary : objectListing.getObjectSummaries()) {
@@ -83,11 +92,26 @@ public class AmazonLogs
                 
                 String eventTime = values[0] + " " + values[1];
                 ip = values[4];
+                
                 if (ip != prevIP) {
-                   // WHOIS - Check registrant of this IP address
-                   registrant = w.whois( ip, apiuser, apipass ); 
                    prevIP = ip;
+        
+                   index = ipl.ipInList(ip, rList);
+                   if (index >= 0) {
+                       r = rList.get(index);
+                       registrant = r.name;   
+                       // Update counter for this IP
+                       r.counter = r.counter + 1;
+                       rList.set(index, r);
+                   } else {
+                       // WHOIS - Check registrant of this IP address
+                       registrant = w.whoisIP( ip );
+                       // If name includes a comma, exclude the comma
+                       registrant = registrant.replace(",", "");
+                       rList.add(new Registrant(ip, registrant, 1));
+                   }
                 }
+                
                 String method = values[5];
                 String fileName = values[7];
                 String statusCode = values[8];
@@ -112,7 +136,7 @@ public class AmazonLogs
             if (mixpanelStatus == 1 & DELETE_PROCESSED_LOGS.equals("YES")) { 
                   // Delete the CDN log ZIP file
                   s3Client.deleteObject(bucketName, key);
-                  System.out.println("============ Deleted Zip " + zips + " ============"); 
+                  System.out.println("========= Deleted Zip " + zips + " ===== List Size " + rList.size() + " =========="); 
                   deletedZips++;
             }
          } catch (IOException e) {
@@ -126,6 +150,10 @@ public class AmazonLogs
    
              if (eventsNumber >= n) { 
                 System.out.println("\n>>> " + eventsNumber + " events in " + zips + " Zip files. Deleted " + deletedZips + " Zip files.\n");
+                
+                ipl.printList(rList, 100);                
+                ipl.saveList(rList, IPfile);
+                
                 return eventsNumber;
             }
          }
@@ -142,6 +170,8 @@ public class AmazonLogs
        } // while next objectListing
         
        System.out.println("\n>>> " + eventsNumber + " events in " + zips + " Zip files. Deleted " + deletedZips + " Zip files.\n");
+       ipl.printList(rList, 50);
+       
        return eventsNumber;
-    }
+    }     
 }
