@@ -37,6 +37,7 @@ public class  Whois {
        } catch (Exception e) {
 			      e.printStackTrace();
             System.out.println("\n\n =====  " + ip + " == " + registrant + " ====\n\n");
+            registrant = "ERROR";
 		   }
      
      return registrant;     

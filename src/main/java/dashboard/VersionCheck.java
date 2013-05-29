@@ -9,6 +9,9 @@
 package dashboard;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -28,7 +31,8 @@ public class VersionCheck
    //
    //
    // =======================================================================
-   public int importVersionCheckLog(int n, String apiuser, String apipass, String IPfile,
+   public int importVersionCheckLog(int n, String apiuser, String apipass, 
+                                    String IPfile, String ERRfile,
                                     String versionCheckURL, String versionCheckPass,
                                     String API_KEY, String TOKEN)  throws Exception 
    {
@@ -45,7 +49,9 @@ public class VersionCheck
       int index = 0;
       Registrant r;
       ArrayList<Registrant> rList = new ArrayList<Registrant>();
+      ArrayList<Registrant> eList = new ArrayList<Registrant>();
       IPList ipl = new IPList();
+      IPList errl = new IPList();
       Whois w = new Whois( apiuser, apipass);
       
       System.out.println(">>>  Version Check log - " + versionCheckURL);
@@ -98,9 +104,19 @@ public class VersionCheck
                } else {
                   // WHOIS - Check registrant of this IP address
                   registrant = w.whoisIP( ip );
-                  // If name includes a comma, exclude the comma
-                  registrant = registrant.replace(",", "");
-                  rList.add(new Registrant(ip, registrant, 1));
+
+                  // if there was an error, try again
+                  if (registrant.equals("ERROR"))
+                      registrant = w.whoisIP( ip );
+                            
+                  // if there was a second error, add it to errors list
+                  if (registrant.equals("ERROR")) {
+                      eList.add(new Registrant(ip, registrant, 1));
+                  } else  {
+                      // If name includes a comma, exclude the comma
+                      registrant = registrant.replace(",", "");
+                      rList.add(new Registrant(ip, registrant, 1));
+                  }
                }
            } 
            
@@ -120,6 +136,15 @@ public class VersionCheck
        ipl.printList(rList, 5);                
        ipl.saveList(rList, IPfile);
     
+       if (!eList.isEmpty()) {
+           SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
+           String fName = ERRfile + sdf.format( new Date() ) + ".txt";
+
+           System.out.println("\n>>> " + eList.size() + " DomainTools errors:"); 
+           errl.saveList(eList, fName );
+       } else
+           System.out.println("\n>>> No DomainTools errors"); 
+       
        return lines;
     }
    }

@@ -35,6 +35,7 @@ public class ImportMain
    static String versionCheckPass = "";
    static String VC_IP_FILE = "";
    static String CDN_IP_FILE = "";
+   static String ERR_IP_FILE = "";
    public static void main(String[] args)
  
     {
@@ -90,8 +91,11 @@ public class ImportMain
            versionCheckURL  = prop.getProperty("VERSION_CHECK_LOG");
            versionCheckPass = prop.getProperty("VERSION_CHECK_PASS");
            VC_IP_FILE = prop.getProperty("VC_IP_FILE");
-           CDN_IP_FILE = prop.getProperty("CDN_IP_FILE");           
-                   
+           CDN_IP_FILE = prop.getProperty("CDN_IP_FILE");
+           
+           CDN_IP_FILE = prop.getProperty("CDN_IP_FILE");
+           ERR_IP_FILE = prop.getProperty("ERR_IP_FILE");
+                              
        		System.out.println("DELETE_PROCESSED_LOGS = " + DELETE_PROCESSED_LOGS);
     		   System.out.println("S3_BUCKET_NAME = " + prop.getProperty("S3_BUCKET_NAME"));
            System.out.println( "===================");
@@ -113,11 +117,12 @@ public class ImportMain
             System.out.println("\n>>> Starting to import " + n + "  " + whatToImport + " events ............. \n");
 
             if ( whatToImport.equals("VC") )
-               vc.importVersionCheckLog( n, DT_API_USER, DT_API_PASS, VC_IP_FILE, 
+               vc.importVersionCheckLog( n, DT_API_USER, DT_API_PASS, VC_IP_FILE, ERR_IP_FILE,
                                          versionCheckURL, versionCheckPass, MIXPANEL_API_KEY, MIXPANEL_TOKEN);
 
             if (whatToImport.equals("CDN") )
-               al.readAmazonLogs( n, AWS_USER, AWS_PASS, CDN_IP_FILE, bucketName, DELETE_PROCESSED_LOGS, 
+               al.readAmazonLogs( n, AWS_USER, AWS_PASS, CDN_IP_FILE, ERR_IP_FILE, 
+                                  bucketName, DELETE_PROCESSED_LOGS, 
                                   MIXPANEL_API_KEY, MIXPANEL_TOKEN, DT_API_USER, DT_API_PASS);
 
       } catch (Exception e) {

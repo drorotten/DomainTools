@@ -50,6 +50,10 @@ public class IPList {
         FileWriter fos = new FileWriter( fName );
         PrintWriter out = new PrintWriter(fos);
 
+        // Write column-headers line
+        out.write("IP Address" + "," + "Registrant" + "," + "CDNs");
+        out.write("\n");
+
         for (int i = 0; i < rList.size(); i++) {
 
             out.write(rList.get(i).ip+","+rList.get(i).name+ "," + rList.get(i).counter);
@@ -83,7 +87,11 @@ public class IPList {
        }
 
        try {
+           // Read colum-headers line     
            dataRow = CSVFile.readLine();
+           // Read first line
+           if (dataRow != null) 
+              dataRow = CSVFile.readLine();
        } catch (IOException e) {
            System.out.println("\n\n CAN'T READ LINES FROM FILE - " + fName + " \n");
            return;

@@ -9,6 +9,9 @@
 package dashboard;
 
 import java.util.ArrayList;
+import java.util.Date;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -31,7 +34,7 @@ public class AmazonLogs
    // 
    // ======================================
    public int readAmazonLogs(int n, 
-                             String AWS_USER, String AWS_PASS, String IPfile,
+                             String AWS_USER, String AWS_PASS, String IPfile, String ERRfile,  
                              String bucketName, String DELETE_PROCESSED_LOGS,
                              String API_KEY, String TOKEN,
                              String apiuser, String apipass) throws Exception {
@@ -51,7 +54,9 @@ public class AmazonLogs
         int index = -1;
         Registrant r;
         ArrayList<Registrant> rList = new ArrayList<Registrant>();
+        ArrayList<Registrant> eList = new ArrayList<Registrant>();
         IPList ipl = new IPList();
+        IPList errl = new IPList();
         
         // Log files Bucket
         AWSCredentials credentials = new BasicAWSCredentials(AWS_USER,AWS_PASS);
@@ -106,9 +111,18 @@ public class AmazonLogs
                    } else {
                        // WHOIS - Check registrant of this IP address
                        registrant = w.whoisIP( ip );
-                       // If name includes a comma, exclude the comma
-                       registrant = registrant.replace(",", "");
-                       rList.add(new Registrant(ip, registrant, 1));
+                       // if there was an error, try again
+                       if (registrant.equals("ERROR"))
+                            registrant = w.whoisIP( ip );
+                            
+                       // if there was a second error, add it to errors list
+                       if (registrant.equals("ERROR")) {
+                          eList.add(new Registrant(ip, registrant, 1));
+                       } else  {
+                          // If name includes a comma, exclude the comma
+                          registrant = registrant.replace(",", "");
+                          rList.add(new Registrant(ip, registrant, 1));
+                       }
                    }
                 }
                 
@@ -154,6 +168,15 @@ public class AmazonLogs
                 ipl.printList(rList, 100);                
                 ipl.saveList(rList, IPfile);
                 
+                if (!eList.isEmpty()) {
+                   SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
+                   String fName = ERRfile + sdf.format( new Date() ) + ".txt";
+
+                   System.out.println("\n>>> " + eList.size() + " DomainTools errors:"); 
+                   errl.saveList(eList, fName );
+                } else 
+                   System.out.println("\n>>> No DomainTools errors"); 
+                
                 return eventsNumber;
             }
          }
@@ -171,6 +194,17 @@ public class AmazonLogs
         
        System.out.println("\n>>> " + eventsNumber + " events in " + zips + " Zip files. Deleted " + deletedZips + " Zip files.\n");
        ipl.printList(rList, 50);
+
+       ipl.saveList(rList, IPfile);
+                
+       if (!eList.isEmpty()) {
+                   SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
+                   String fName = ERRfile + sdf.format( new Date() ) + ".txt";
+
+                   System.out.println("\n>>> " + eList.size() + " DomainTools errors:"); 
+                   errl.saveList(eList, fName );
+       } else 
+                   System.out.println("\n>>> No DomainTools errors"); 
        
        return eventsNumber;
     }     
