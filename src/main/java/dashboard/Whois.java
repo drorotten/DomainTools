@@ -35,8 +35,9 @@ public class  Whois {
 		
        //} catch (DomainToolsException e) {
        } catch (Exception e) {
-			      e.printStackTrace();
-            System.out.println("\n\n =====  " + ip + " == " + registrant + " ====\n\n");
+			      //e.printStackTrace();
+            System.out.println("\n ===== DOMAIN TOOL EXCEPTION ====");
+            System.out.println(    " =====       " + ip + " " + registrant + "    ====\n");
             registrant = "ERROR";
 		   }
      

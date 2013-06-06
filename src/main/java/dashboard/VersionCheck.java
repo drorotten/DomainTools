@@ -34,14 +34,15 @@ public class VersionCheck
    public int importVersionCheckLog(int n, String apiuser, String apipass, 
                                     String IPfile, String ERRfile,
                                     String versionCheckURL, String versionCheckPass,
-                                    String API_KEY, String TOKEN)  throws Exception 
+                                    String API_KEY, String TOKEN,
+                                    String startTime)  throws Exception 
    {
       int lines = 0;
       String ip = "";
 	    String registrant = "";
       Mixpanel mix = new Mixpanel();
       String build = "";
-      String eventTime = "3/14/13 10:10 AM";
+      String eventTime = "5/22/13 0:01 AM";
       int x = 0;      
       int mixpanelStatus = 0;
       int errors = 0;      
@@ -53,6 +54,11 @@ public class VersionCheck
       IPList ipl = new IPList();
       IPList errl = new IPList();
       Whois w = new Whois( apiuser, apipass);
+      SimpleDateFormat sdf  = new SimpleDateFormat("M/dd/yy h:mm a");
+      
+      long event = 0;
+      long from = sdf.parse( startTime ).getTime();
+      int nn = 1;       
       
       System.out.println(">>>  Version Check log - " + versionCheckURL);
       URL logURL = new URL( versionCheckURL );
@@ -75,6 +81,7 @@ public class VersionCheck
         ipl.loadList(  rList, IPfile );
         ipl.printList(rList, 5);
 
+
  	    // Loop - limited to n cycles (parameter defined by user)
         while (inputLine != null & lines < n) {
            String[] dataArray = inputLine.split(",");
@@ -90,6 +97,19 @@ public class VersionCheck
               ip = dataArray[1];
               build = dataArray[2];
               eventTime = dataArray[3];
+           }
+           
+           event = sdf.parse( eventTime).getTime();
+           if (event < from) {
+               nn++;
+               //System.out.print(nn + ", ");   
+               inputLine = br.readLine(); // Read next line of data.
+               continue;
+           }
+           
+           if (lines == 0) {
+             System.out.println("------  Skipped " + nn + " events --------");
+             System.out.println();
            }
            
            if (ip != prevIP) {
@@ -123,6 +143,8 @@ public class VersionCheck
            inputLine = br.readLine(); // Read next line of data.
            lines++;
      
+           System.out.println(">> " + lines + " - " + eventTime + "  " + ip + " - " + registrant);
+
            // Track the event in Mixpanel (using the POST import) - event time is in the PAST
            mix.postVersionCheckToMixpanel(API_KEY, TOKEN, ip, registrant, "Version Check", eventTime, build);
            
@@ -137,7 +159,7 @@ public class VersionCheck
        ipl.saveList(rList, IPfile);
     
        if (!eList.isEmpty()) {
-           SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
+           sdf  = new SimpleDateFormat("yyyy-MM-dd-HH-mm");
            String fName = ERRfile + sdf.format( new Date() ) + ".txt";
 
            System.out.println("\n>>> " + eList.size() + " DomainTools errors:"); 
@@ -148,4 +170,5 @@ public class VersionCheck
        return lines;
     }
    }
+   
 }

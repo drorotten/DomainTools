@@ -36,6 +36,8 @@ public class ImportMain
    static String VC_IP_FILE = "";
    static String CDN_IP_FILE = "";
    static String ERR_IP_FILE = "";
+   static String FROM_TIME = "5/22/13 00:00 AM";
+
    public static void main(String[] args)
  
     {
@@ -90,6 +92,7 @@ public class ImportMain
 
            versionCheckURL  = prop.getProperty("VERSION_CHECK_LOG");
            versionCheckPass = prop.getProperty("VERSION_CHECK_PASS");
+           FROM_TIME = prop.getProperty("FROM_TIME");
            VC_IP_FILE = prop.getProperty("VC_IP_FILE");
            CDN_IP_FILE = prop.getProperty("CDN_IP_FILE");
            
@@ -118,7 +121,9 @@ public class ImportMain
 
             if ( whatToImport.equals("VC") )
                vc.importVersionCheckLog( n, DT_API_USER, DT_API_PASS, VC_IP_FILE, ERR_IP_FILE,
-                                         versionCheckURL, versionCheckPass, MIXPANEL_API_KEY, MIXPANEL_TOKEN);
+                                         versionCheckURL, versionCheckPass, 
+                                         MIXPANEL_API_KEY, MIXPANEL_TOKEN,
+                                         FROM_TIME);
 
             if (whatToImport.equals("CDN") )
                al.readAmazonLogs( n, AWS_USER, AWS_PASS, CDN_IP_FILE, ERR_IP_FILE, 

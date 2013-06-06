@@ -30,7 +30,7 @@ import org.apache.commons.httpclient.methods.*;
 
 public class Mixpanel
 {
-int i = 0;
+//int i = 0;
 
    // =============================
    // Post CDN event to Mixpanel
@@ -107,8 +107,6 @@ int i = 0;
       obj1.put("token", TOKEN);
    
       JSONObject obj2 = new JSONObject();
-      System.out.println(">> " + i + " - " + eventName + " " + eventTime + "  " + ip + " - " + registrant);
-      i++;
       obj2.put("event", eventName);
       obj2.put("properties", obj1);
 
